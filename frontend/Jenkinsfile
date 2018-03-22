@@ -4,6 +4,30 @@ node {
   }
 
   stage('archive') {
-    archiveArtifacts artifacts: 'frontend/, *'
+    archiveArtifacts artifacts: '*, frontend/'
+  }
+
+  stage('build image') {
+    steps {
+      sh '''
+        cd ${WORKSPACE}
+        REPO="frontend-service"
+        #Build container images using Dockerfile
+        docker build --no-cache -t ${REPO}:${BUILD_NUMBER} .
+      '''
+    }
+  }
+
+  stage('push image to ECR') {
+    steps {
+      sh '''
+        REG_ADDRESS="${FRONTEND-SERVICE-REPO}"
+        REPO="frontend-service"
+        #Tag the build with BUILD_NUMBER version
+        docker tag ${REPO}:${BUILD_NUMBER} ${REG_ADDRESS}/${REPO}:${BUILD_NUMBER}
+        #Publish image
+        docker push ${REG_ADDRESS}/${REPO}:${BUILD_NUMBER}
+      '''
+    }
   }
 }
