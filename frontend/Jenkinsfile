@@ -17,9 +17,9 @@ node {
   }
 
   stage('push image to ECR') {
-    withCredentials([string(credentialsId: 'FRONTEND-SERVICE-REPO', variable: 'FRONTEND_SERVICE_REPO')]) {
+    withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
       sh '''
-        REG_ADDRESS="${FRONTEND_SERVICE_REPO}"
+        REG_ADDRESS="${REGISTRY_URL}"
         REPO="frontend-service"
         #Tag the build with BUILD_NUMBER version
         docker tag ${REPO}:${BUILD_NUMBER} ${REG_ADDRESS}/${REPO}:${BUILD_NUMBER}
