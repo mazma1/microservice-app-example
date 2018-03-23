@@ -16,6 +16,13 @@ node {
     '''
   }
 
+  stage('refresh auth token') {
+    sh '''
+      ECR_LOGIN=$(/var/lib/jenkins/.local/bin/aws ecr get-login --no-include-email)
+      ${ECR_LOGIN}
+    '''
+  }
+
   stage('push image to ECR') {
     withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
       sh '''
