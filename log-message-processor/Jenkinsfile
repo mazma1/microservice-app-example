@@ -6,4 +6,33 @@ node {
   stage('archive') {
     archiveArtifacts artifacts: '*, log-message-processor/'
   }
+
+  stage('build image') {
+    sh '''
+      cd ${WORKSPACE}/log-message-processor
+      REPO="log-message-processor"
+      #Build container images using Dockerfile
+      docker build --no-cache -t ${REPO}:${BUILD_NUMBER} .
+    '''
+  }
+
+  stage('refresh auth token') {
+    sh '''
+      ECR_LOGIN=$(/var/lib/jenkins/.local/bin/aws ecr get-login --no-include-email)
+      ${ECR_LOGIN}
+    '''
+  }
+
+  stage('push image to ECR') {
+    withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
+      sh '''
+        REG_ADDRESS="${REGISTRY_URL}"
+        REPO="log-message-processor"
+        #Tag the build with BUILD_NUMBER version
+        docker tag ${REPO}:${BUILD_NUMBER} ${REG_ADDRESS}/${REPO}:${BUILD_NUMBER}
+        #Publish image
+        docker push ${REG_ADDRESS}/${REPO}:${BUILD_NUMBER}
+      '''
+    }
+  }
 }
