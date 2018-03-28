@@ -35,4 +35,15 @@ node {
       '''
     }
   }
+
+  stage('deploy to Kubernetes') {
+    withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
+      sh '''
+        REPO="todos-api-service"
+        NEW_SERVICE_IMAGE="${REGISTRY_URL}/${REPO}:${BUILD_NUMBER}"
+        #Update the image of the todos-api container
+        kubectl set image deployment/todos-api todos-api=${NEW_SERVICE_IMAGE}
+      '''
+    }
+  }
 }

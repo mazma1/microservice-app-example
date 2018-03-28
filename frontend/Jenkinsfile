@@ -35,4 +35,15 @@ node {
       '''
     }
   }
+
+  stage('deploy to Kubernetes') {
+    withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
+      sh '''
+        REPO="frontend-service"
+        NEW_SERVICE_IMAGE="${REGISTRY_URL}/${REPO}:${BUILD_NUMBER}"
+        #Update the image of the frontend container
+        kubectl set image deployment/frontend frontend=${NEW_SERVICE_IMAGE}
+      '''
+    }
+  }
 }

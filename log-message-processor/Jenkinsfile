@@ -35,4 +35,15 @@ node {
       '''
     }
   }
+
+  stage('deploy to Kubernetes') {
+    withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
+      sh '''
+        REPO="log-message-processor"
+        NEW_SERVICE_IMAGE="${REGISTRY_URL}/${REPO}:${BUILD_NUMBER}"
+        #Update the image of the log-message-processor container
+        kubectl set image deployment/log-message-processor log-message-processor=${NEW_SERVICE_IMAGE}
+      '''
+    }
+  }
 }

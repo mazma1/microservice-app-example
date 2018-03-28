@@ -10,7 +10,7 @@ node {
   stage('build image') {
     sh '''
       cd ${WORKSPACE}/users-api
-      REPO="todos-api-service"
+      REPO="users-api-service"
       #Build container images using Dockerfile
       docker build --no-cache -t ${REPO}:${BUILD_NUMBER} .
     '''
@@ -32,6 +32,17 @@ node {
         docker tag ${REPO}:${BUILD_NUMBER} ${REG_ADDRESS}/${REPO}:${BUILD_NUMBER}
         #Publish image
         docker push ${REG_ADDRESS}/${REPO}:${BUILD_NUMBER}
+      '''
+    }
+  }
+
+  stage('deploy to Kubernetes') {
+    withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
+      sh '''
+        REPO="users-api-service"
+        NEW_SERVICE_IMAGE="${REGISTRY_URL}/${REPO}:${BUILD_NUMBER}"
+        #Update the image of the users-api container
+        kubectl set image deployment/users-api users-api=${NEW_SERVICE_IMAGE}
       '''
     }
   }
