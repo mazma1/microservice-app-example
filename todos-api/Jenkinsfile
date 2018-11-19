@@ -1,6 +1,6 @@
 node {
   stage('git checkout') {
-    git branch: 'deploy-k8s', url: 'https://github.com/mazma1/microservice-app-example'
+    git branch: 'deploy-k8s-gcp', url: 'https://github.com/mazma1/microservice-app-example'
   }
 
   stage('archive') {
@@ -16,14 +16,16 @@ node {
     '''
   }
 
-  stage('refresh auth token') {
-    sh '''
-      ECR_LOGIN=$(/var/lib/jenkins/.local/bin/aws ecr get-login --no-include-email)
-      ${ECR_LOGIN}
-    '''
+  stage('login to gcr') {
+    withCredentials([string(credentialsId: 'GCLOUD-SERVICE-KEY', variable: 'GCLOUD_SERVICE_KEY')]) {
+      sh '''
+        echo $GCLOUD_SERVICE_KEY | base64 --decode --ignore-garbage > ${WORKSPACE}/gcloud-service-key.json
+        docker login -u _json_key -p "$(cat ${WORKSPACE}/gcloud-service-key.json)" https://gcr.io
+      '''
+    }
   }
 
-  stage('push image to ECR') {
+  stage('push image to GCR') {
     withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
       sh '''
         REG_ADDRESS="${REGISTRY_URL}"
@@ -36,14 +38,14 @@ node {
     }
   }
 
-  stage('deploy to Kubernetes') {
-    withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
-      sh '''
-        REPO="todos-api-service"
-        NEW_SERVICE_IMAGE="${REGISTRY_URL}/${REPO}:${BUILD_NUMBER}"
-        #Update the image of the todos-api container
-        kubectl set image deployment/todos-api todos-api=${NEW_SERVICE_IMAGE}
-      '''
-    }
-  }
+  // stage('deploy to Kubernetes') {
+  //   withCredentials([string(credentialsId: 'REGISTRY-URL', variable: 'REGISTRY_URL')]) {
+  //     sh '''
+  //       REPO="todos-api-service"
+  //       NEW_SERVICE_IMAGE="${REGISTRY_URL}/${REPO}:${BUILD_NUMBER}"
+  //       #Update the image of the todos-api container
+  //       kubectl set image deployment/todos-api todos-api=${NEW_SERVICE_IMAGE}
+  //     '''
+  //   }
+  // }
 }
