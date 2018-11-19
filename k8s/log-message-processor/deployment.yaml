@@ -25,5 +25,5 @@ spec:
           
         image: log-message-processor
         name: log-message-processor
-        imagePullPolicy: Never
+        imagePullPolicy: Always
       restartPolicy: Always
