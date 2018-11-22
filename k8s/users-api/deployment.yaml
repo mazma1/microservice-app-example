@@ -20,7 +20,7 @@ spec:
           value: "8083"
         - name: SPRING_ZIPKIN_BASE_URL
           value: http://zipkin:9411
-        image: 791699432634.dkr.ecr.eu-central-1.amazonaws.com/users-api-service:12
+        image: $SERVICE_DOCKER_IMAGE
         name: users-api
         ports:
         - containerPort: 8083

@@ -22,7 +22,7 @@ spec:
           value: http://users-api:8083
         - name: ZIPKIN_URL
           value: http://zipkin:9411/api/v2/spans          
-        image: 791699432634.dkr.ecr.eu-central-1.amazonaws.com/auth-api-service:10
+        image: $SERVICE_DOCKER_IMAGE
         name: auth-api
         ports:
         - containerPort: 8081
