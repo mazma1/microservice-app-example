@@ -45,11 +45,31 @@ node {
       string(credentialsId: 'SERVER-URL', variable: 'SERVER_URL')
     ]) {
       withKubeConfig(caCertificate: '', contextName: "${CLUSTER_NAME}", credentialsId: 'KUBERNETES', serverUrl: "${SERVER_URL}") {
+
         sh '''
-          REPO="auth-api-service"
+          SERVICE='auth-api'
+          REPO='auth-api-service'
+          DEPLOYMENTS=$(kubectl get deployment -o=jsonpath='{.items[*].metadata.name}')
+          DEPLOYMENT_BASE_PATH="${WORKSPACE}/k8s"
           NEW_SERVICE_IMAGE="${REGISTRY_URL}/${REPO}:${BUILD_NUMBER}"
-          #Update the image of the auth-api container
-          kubectl set image deployment/auth-api auth-api=${NEW_SERVICE_IMAGE}
+
+          SERVICE_FOUND=$(echo ${DEPLOYMENTS} | grep "${SERVICE}") || :
+
+          if [ -z "${SERVICE_FOUND}" ]; then
+              echo "${REPO} does not exist, about to deploy service"
+              DEPLOYMENT_FILE="${DEPLOYMENT_BASE_PATH}/${SERVICE}/deployment.yaml"
+
+              # update deployment file with image published in build, then create deployment
+              sed -i 's|$SERVICE_DOCKER_IMAGE|'"$NEW_SERVICE_IMAGE"'|' "${DEPLOYMENT_FILE}"
+              
+              kubectl create -f "${DEPLOYMENT_FILE}"
+              kubectl create -f "${DEPLOYMENT_BASE_PATH}/${SERVICE}/service.yaml"
+          else
+              echo "${REPO} deployment already exists, about to deploy an update"
+
+              # Update the deployment of the auth-api service
+              kubectl set image deployment/auth-api auth-api=${NEW_SERVICE_IMAGE}
+          fi
         '''
       }
     }
